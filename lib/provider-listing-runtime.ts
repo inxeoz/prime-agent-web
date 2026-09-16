@@ -1,37 +1,44 @@
-import type { ModelRuntime } from "@earendil-works/pi-coding-agent";
-import type { ProviderCredentialType, ProviderListingInput } from "@/lib/provider-listing";
+import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
+import type { ProviderListingInput } from "@/lib/provider-listing";
 
 /**
- * Adapter between `ModelRuntime` and the pure listing helpers in
+ * Adapter between `AuthStorage`/`ModelRegistry` and the pure listing helpers in
  * `lib/provider-listing.ts`.
  */
-export async function collectProviderListingInputs(
-  modelRuntime: ModelRuntime,
-): Promise<ProviderListingInput[]> {
-  const models = modelRuntime.getModels();
+export async function collectProviderListingInputs(): Promise<ProviderListingInput[]> {
+  const authStorage = AuthStorage.create();
+  const modelRegistry = ModelRegistry.create(authStorage);
+  const allModels = modelRegistry.getAll();
 
-  const credentialTypes = new Map<string, ProviderCredentialType>();
-  try {
-    for (const credential of await modelRuntime.listCredentials()) {
-      if (credential.type === "api_key" || credential.type === "oauth") {
-        credentialTypes.set(credential.providerId, credential.type);
-      }
-    }
-  } catch {
-    // A damaged auth.json must not empty the provider list; fall back to the
-    // per-provider auth status only.
+  const oauthProviders = authStorage.getOAuthProviders();
+  const oauthIds = new Set(oauthProviders.map((p) => p.id));
+  const oauthById = new Map(oauthProviders.map((p) => [p.id, p] as const));
+
+  const modelProviderIds = new Set(allModels.map((m) => m.provider));
+  const allProviderIds = new Set<string>([...modelProviderIds, ...oauthIds]);
+
+  const result: ProviderListingInput[] = [];
+  for (const id of allProviderIds) {
+    const oauth = oauthById.get(id);
+    const hasOAuth = oauthIds.has(id);
+    const hasApiKeyLogin = true;
+    const status = modelRegistry.getProviderAuthStatus(id);
+    const cred = authStorage.get(id);
+    const credentialType = cred?.type === "api_key" || cred?.type === "oauth" ? cred.type : undefined;
+    const modelCount = allModels.filter((m) => m.provider === id).length;
+    const displayName = modelRegistry.getProviderDisplayName(id);
+
+    result.push({
+      id,
+      name: displayName,
+      hasApiKeyLogin,
+      hasOAuth,
+      ...(oauth?.name ? { oauthName: oauth.name } : {}),
+      status,
+      ...(credentialType ? { credentialType } : {}),
+      modelCount,
+    });
   }
 
-  return modelRuntime.getProviders().map((provider) => ({
-    id: provider.id,
-    name: provider.name,
-    hasApiKeyLogin: Boolean(provider.auth.apiKey?.login),
-    hasOAuth: Boolean(provider.auth.oauth),
-    ...(provider.auth.oauth?.name ? { oauthName: provider.auth.oauth.name } : {}),
-    status: modelRuntime.getProviderAuthStatus(provider.id),
-    ...(credentialTypes.has(provider.id)
-      ? { credentialType: credentialTypes.get(provider.id) }
-      : {}),
-    modelCount: models.filter((model) => model.provider === provider.id).length,
-  }));
+  return result;
 }

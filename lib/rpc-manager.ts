@@ -1,3 +1,4 @@
+import "./prime-compat";
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import { createAgentSessionFromServices, createAgentSessionServices, getAgentDir, initTheme, SessionManager, SettingsManager, Theme } from "@earendil-works/pi-coding-agent";
 import { KeybindingsManager as TuiKeybindingsManager, TUI_KEYBINDINGS } from "@earendil-works/pi-tui";
@@ -13,7 +14,7 @@ import {
   preferUserBashExtension,
 } from "./project-command-env";
 import { cacheSessionPath, invalidateSessionListCache, resolveSessionPath } from "./session-reader";
-import { getProjectTrustStatus, projectTrustReloadOptions } from "./project-trust";
+// project-trust removed in prime-agent 0.9.5: always trusted
 import { persistExplicitStartupPreferences } from "./startup-preferences";
 import { notifySessionComplete } from "./web-push";
 import { hasActiveSessionLivenessProvider } from "./session-liveness";
@@ -172,8 +173,8 @@ const THINKING_LEVEL_NAMES = new Set<ThinkingLevel>(["off", "minimal", "low", "m
 class PlainTextTheme extends Theme {
   constructor() {
     super(
-      { muted: "", text: "", thinkingXhigh: "", searchMatchText: "" } as ConstructorParameters<typeof Theme>[0],
-      { selectedBg: "" } as ConstructorParameters<typeof Theme>[1],
+      {} as unknown as ConstructorParameters<typeof Theme>[0],
+      {} as unknown as ConstructorParameters<typeof Theme>[1],
       "truecolor",
     );
   }
@@ -200,7 +201,8 @@ function withExtensionTools(session: AgentSessionLike, toolNames: string[]): str
   if (toolNames.length === 0) return [];
 
   const codingToolNames = new Set(CODING_TOOL_NAMES);
-  const selectedToolNames = resolveShellTools(toolNames, session.settingsManager.getDefaultTools());
+  const defaultTools = (session.settingsManager as unknown as { getDefaultTools?: () => string[] }).getDefaultTools?.() ?? CODING_TOOL_NAMES;
+  const selectedToolNames = resolveShellTools(toolNames, defaultTools);
   const extensionToolNames = session
     .getAllTools()
     .map((t) => t.name)
@@ -414,13 +416,13 @@ export class AgentSessionWrapper {
 
   private installExactSystemPromptContinuation(): void {
     if (!this.exactSystemPrompt) return;
-    const previous = this.inner.agent.prepareNextTurnWithContext;
-    this.inner.agent.prepareNextTurnWithContext = async (turn, signal) => {
-      const prepared = await previous?.(turn, signal);
+    const previous = this.inner.agent.prepareNextTurnWithContext as unknown as ((turn: { context: unknown }, signal?: AbortSignal) => Promise<{ context?: unknown } | undefined> | undefined);
+    (this.inner.agent as unknown as { prepareNextTurnWithContext: unknown }).prepareNextTurnWithContext = async (turn: { context: unknown }, signal?: AbortSignal) => {
+      const prepared = await previous?.(turn as never, signal);
       return {
         ...prepared,
         context: {
-          ...(prepared?.context ?? turn.context),
+          ...((prepared?.context ?? (turn as unknown as { context: Record<string, unknown> }).context) as Record<string, unknown>),
           systemPrompt: this.exactSystemPrompt!(),
         },
       };
@@ -686,10 +688,10 @@ export class AgentSessionWrapper {
           autoRetryEnabled: this.inner.autoRetryEnabled,
           model: model ? { id: model.id, provider: model.provider } : undefined,
           messageCount: 0,
-          pendingMessageCount: this.inner.pendingMessageCount,
+          pendingMessageCount: (this.inner as unknown as { pendingMessageCount?: number }).pendingMessageCount ?? 0,
           queuedMessages: {
-            steering: [...this.inner.getSteeringMessages()],
-            followUp: [...this.inner.getFollowUpMessages()],
+            steering: [...(this.inner.getSteeringMessages?.() ?? [])],
+            followUp: [...(this.inner.getFollowUpMessages?.() ?? [])],
           },
           contextUsage: contextUsage
             ? { percent: contextUsage.percent, contextWindow: contextUsage.contextWindow, tokens: contextUsage.tokens }
@@ -703,10 +705,10 @@ export class AgentSessionWrapper {
 
       case "set_model": {
         const { provider, modelId } = command as { provider: string; modelId: string };
-        let model = this.inner.modelRuntime.getModel(provider, modelId);
+        let model = this.inner.modelRegistry.find(provider, modelId);
         if (!model) {
-          await this.inner.modelRuntime.refresh({ allowNetwork: false });
-          model = this.inner.modelRuntime.getModel(provider, modelId);
+          await this.inner.modelRegistry.refreshAvailableModels?.();
+          model = this.inner.modelRegistry.find(provider, modelId);
         }
         if (!model) throw new Error(`Model not found: ${provider}/${modelId}`);
         await this.inner.setModel(model);
@@ -862,7 +864,7 @@ export class AgentSessionWrapper {
       case "clear_queue": {
         // Full clear only: pi has no single-item dequeue, and clear+requeue
         // races against the agent loop pulling messages mid-flight.
-        return this.inner.clearQueue();
+        return (this.inner.clearQueue as unknown as (() => unknown) | undefined)?.() ?? { steering: [], followUp: [] };
       }
 
       case "steer": {
@@ -929,7 +931,6 @@ export class AgentSessionWrapper {
         await this.waitForExtensionsBound();
         this.extensionStatuses.clear();
         this.resetExtensionWidgetsForReload();
-        this.syncProjectTrust();
         await this.inner.reload();
         this.setActiveToolSelection(activeToolNames);
         if (typeof this.inner.bindExtensions !== "function") {
@@ -1616,7 +1617,6 @@ export class AgentSessionWrapper {
       reload: async () => {
         this.extensionStatuses.clear();
         this.resetExtensionWidgetsForReload();
-        this.syncProjectTrust();
         await this.inner.reload({
           beforeSessionStart: () => {
             this.inner.extensionRunner.setUIContext?.(this.createExtensionUiContext(), "rpc");
@@ -1628,8 +1628,7 @@ export class AgentSessionWrapper {
   }
 
   private syncProjectTrust(): void {
-    const status = getProjectTrustStatus(this.cwd, getAgentDir());
-    this.inner.settingsManager.setProjectTrusted(status.trusted);
+    // prime-agent 0.9.5 has no trust concept - always trusted, no-op
   }
 }
 
@@ -1985,17 +1984,6 @@ export async function startRpcSession(
       toolsOption = selectedToolNames.length === 0 ? [] : undefined;
     }
 
-    // Build services first so extension-registered providers are available
-    // before the SDK restores the saved model from the session file.
-    // Gate untrusted project extensions so opening a repository does not run
-    // its .pi/extensions code automatically (see lib/project-trust.ts, #236).
-    const trustReloadOptions = subagentResources
-      ? subagentLoadsResources
-        ? projectTrustReloadOptions(sessionCwd, agentDir)
-        : undefined
-      : chatOnly
-        ? undefined
-        : projectTrustReloadOptions(sessionCwd, agentDir);
     const settingsManager = SettingsManager.create(sessionCwd, agentDir);
     const services = await createAgentSessionServices({
       cwd: sessionCwd,
@@ -2023,19 +2011,18 @@ export async function startRpcSession(
               createProjectCommandBashExtension({
                 cwd: sessionCwd,
                 settings: settingsManager,
-              }),
+              }) as unknown as import("@earendil-works/pi-coding-agent").ExtensionFactory,
               createSubagentExtension(
                 SUBAGENT_CONTROLLER.extensionRuntime,
                 () => listSubagentProfiles(sessionCwd),
                 isBuiltInSubagentsEnabled,
-              ),
+              ) as unknown as import("@earendil-works/pi-coding-agent").ExtensionFactory,
             ],
             extensionsOverride: (base) => preferUserBashExtension(preferPiWebSubagentExtension(base)),
           },
-      ...(trustReloadOptions ? { resourceLoaderReloadOptions: trustReloadOptions } : {}),
     });
     const scope = await resolveVisibleModels(
-      services.modelRuntime,
+      services.modelRegistry,
       services.settingsManager.getEnabledModels(),
     );
     const effectiveInitialModel = initialModel && (

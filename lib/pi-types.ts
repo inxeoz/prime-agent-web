@@ -7,9 +7,7 @@ import type {
   Theme,
 } from "@earendil-works/pi-coding-agent";
 import type {
-  AgentLoopTurnUpdate,
   AgentMessage as PiAgentMessage,
-  PrepareNextTurnContext,
 } from "@earendil-works/pi-agent-core";
 import type { ImageContent, TextContent } from "@earendil-works/pi-ai";
 
@@ -135,9 +133,12 @@ export interface AgentSessionLike {
   readonly autoCompactionEnabled: boolean;
   readonly autoRetryEnabled: boolean;
   readonly model: ModelLike | undefined;
-  readonly modelRuntime: {
-    getModel: (provider: string, modelId: string) => ModelLike | undefined;
-    refresh: (options?: { allowNetwork?: boolean }) => Promise<unknown>;
+  readonly modelRegistry: {
+    find: (provider: string, modelId: string) => ModelLike | undefined;
+    getAll: () => ModelLike[];
+    getAvailable: () => ModelLike[] | Promise<ModelLike[]>;
+    refreshAvailableModels?: () => Promise<unknown>;
+    getError?: () => string | undefined;
   };
   readonly sessionManager: SessionManager;
   readonly settingsManager: SettingsManager;
@@ -148,9 +149,9 @@ export interface AgentSessionLike {
       streamingMessage?: PiAgentMessage;
     };
     prepareNextTurnWithContext?: (
-      context: PrepareNextTurnContext,
+      context: unknown,
       signal?: AbortSignal,
-    ) => Promise<AgentLoopTurnUpdate | undefined> | AgentLoopTurnUpdate | undefined;
+    ) => Promise<unknown | undefined> | unknown | undefined;
   };
   readonly extensionRunner: ExtensionRunnerLike;
   readonly promptTemplates: readonly PromptTemplateLike[];
@@ -191,12 +192,12 @@ export interface AgentSessionLike {
   getLastAssistantText(): string | undefined;
   setAutoCompactionEnabled(enabled: boolean): void;
   setAutoRetryEnabled(enabled: boolean): void;
-  steer(text: string, images?: Array<{ type: "image"; data: string; mimeType: string }>): Promise<void>;
-  followUp(text: string, images?: Array<{ type: "image"; data: string; mimeType: string }>): Promise<void>;
-  readonly pendingMessageCount: number;
-  getSteeringMessages(): readonly string[];
-  getFollowUpMessages(): readonly string[];
-  clearQueue(): { steering: string[]; followUp: string[] };
+  steer(text: string, images?: Array<{ type: "image"; data: string; mimeType: string }>): Promise<void | boolean>;
+  followUp(text: string, images?: Array<{ type: "image"; data: string; mimeType: string }>): Promise<void | boolean>;
+  readonly pendingMessageCount?: number;
+  getSteeringMessages?(): readonly string[];
+  getFollowUpMessages?(): readonly string[];
+  clearQueue?(): { steering: string[]; followUp: string[] };
   getAllTools(): ToolInfo[];
   getActiveToolNames(): string[];
   setActiveToolsByName(names: string[]): void;

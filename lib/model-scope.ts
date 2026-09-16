@@ -1,9 +1,7 @@
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
-import {
-  resolveModelScopeWithDiagnostics,
-  type ModelRuntime,
-  type ScopedModel,
-} from "@earendil-works/pi-coding-agent";
+import { ModelRegistry } from "@earendil-works/pi-coding-agent";
+import { resolveModelScopeFromModels } from "@earendil-works/pi-coding-agent/dist/core/model-resolver.js";
+import type { ScopedModel } from "@earendil-works/pi-coding-agent/dist/core/model-resolver.js";
 import type { Api, Model } from "@earendil-works/pi-ai";
 
 const THINKING_LEVEL_SUFFIXES = new Set<ThinkingLevel>([
@@ -106,26 +104,27 @@ function assertNoAmbiguousExactPatterns(
  * the UI without any selectable model.
  */
 export async function resolveVisibleModels(
-  modelRuntime: ModelRuntime,
+  modelRegistry: ModelRegistry,
   patterns: string[] | undefined,
 ): Promise<ModelScopeResult> {
   const cleaned = (patterns ?? []).map((pattern) => pattern.trim()).filter(Boolean);
   if (cleaned.length === 0) {
     return {
-      visible: await modelRuntime.getAvailable(),
+      visible: modelRegistry.getAvailable(),
       scopedModels: [],
       thinkingLevelPins: {},
       warnings: [],
     };
   }
 
-  const available = await modelRuntime.getAvailable();
+  const available = modelRegistry.getAvailable();
   assertNoAmbiguousExactPatterns(cleaned, available);
-  const snapshotRuntime = {
-    getAvailable: async () => available,
-  } as ModelRuntime;
-  const { scopedModels, diagnostics } = await resolveModelScopeWithDiagnostics(cleaned, snapshotRuntime);
-  const warnings = diagnostics.map((diagnostic) => diagnostic.message);
+  const scopedModels = resolveModelScopeFromModels(cleaned, available);
+  // prime 0.9.5 resolver no longer returns diagnostics; synthesize warnings
+  // when nothing matched so the UI can surface a stale-pattern hint.
+  const warnings: string[] =
+    scopedModels.length === 0 ? cleaned.map((p) => `No models match pattern "${p}"`) : [];
+
   if (scopedModels.length === 0) {
     return {
       visible: available,

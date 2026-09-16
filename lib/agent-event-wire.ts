@@ -1,4 +1,4 @@
-import type { JsonAgentSessionEvent } from "@earendil-works/pi-coding-agent";
+import type { AgentSessionEvent as JsonAgentSessionEvent } from "@earendil-works/pi-coding-agent";
 
 export interface AgentEventLike {
   type: string;

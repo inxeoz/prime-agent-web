@@ -22,7 +22,7 @@ type ExportHtmlModule = {
 
 async function getPiPackageDir(): Promise<string | null> {
   try {
-    const { getPackageDir } = (await import("@earendil-works/pi-coding-agent")) as PiCodingAgentModule;
+    const { getPackageDir } = (await import("@earendil-works/pi-coding-agent")) as unknown as PiCodingAgentModule;
     return getPackageDir();
   } catch {
     return null;

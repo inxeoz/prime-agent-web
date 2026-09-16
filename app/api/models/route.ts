@@ -42,12 +42,12 @@ async function loadModels(cwd: string): Promise<ModelsData> {
     agentDir,
     ...(trustReloadOptions ? { resourceLoaderReloadOptions: trustReloadOptions } : {}),
   });
-  const modelError = services.modelRuntime.getError();
+  const modelError = services.modelRegistry.getError();
   const settings: SettingsManager = services.settingsManager;
   // `enabledModels` supports globs and fuzzy patterns, so resolve it the same
   // way the CLI does instead of comparing pattern strings literally (#307).
   const scope = await resolveVisibleModels(
-    services.modelRuntime,
+    services.modelRegistry,
     settings.getEnabledModels(),
   );
   const { visible, thinkingLevelPins, warnings } = scope;

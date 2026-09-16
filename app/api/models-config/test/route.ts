@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { completeSimple, type AssistantMessage } from "@earendil-works/pi-ai/compat";
-import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { completeSimple, type AssistantMessage } from "@earendil-works/pi-ai";
+import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
 import { hasJsonContentType, isApiRequestAllowed } from "@/lib/request-security";
 
 export const dynamic = "force-dynamic";
@@ -59,15 +59,16 @@ export async function POST(req: Request) {
       },
     }, null, 2), "utf8");
 
-    const modelRuntime = await ModelRuntime.create({ modelsPath });
-    const loadError = modelRuntime.getError();
+    const authStorage = AuthStorage.create(join(tempDir, "auth.json"));
+    const modelRegistry = ModelRegistry.create(authStorage, modelsPath);
+    const loadError = modelRegistry.getError();
     if (loadError) return NextResponse.json({ ok: false, error: loadError });
 
-    const model = modelRuntime.getModel(providerName, modelId);
+    const model = modelRegistry.find(providerName, modelId);
     if (!model) return NextResponse.json({ ok: false, error: `Model not found: ${providerName}/${modelId}` });
 
-    const resolved = await modelRuntime.getAuth(model);
-    if (!resolved?.auth.apiKey) {
+    const resolved = await modelRegistry.getApiKeyAndHeaders(model);
+    if (!resolved.ok || !resolved.apiKey) {
       return NextResponse.json({ ok: false, error: `No API key found for "${providerName}"` });
     }
 
@@ -84,11 +85,10 @@ export async function POST(req: Request) {
           timestamp: Date.now(),
         }],
       }, {
-        apiKey: resolved.auth.apiKey,
-        headers: resolved.auth.headers,
+        apiKey: resolved.ok ? resolved.apiKey : undefined,
+        headers: resolved.ok ? resolved.headers : undefined,
         maxTokens: 16,
         timeoutMs: TEST_TIMEOUT_MS,
-        maxRetries: 0,
         cacheRetention: "none",
         signal: controller.signal,
         onResponse: (response) => { status = response.status; },

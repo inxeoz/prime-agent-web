@@ -1,7 +1,7 @@
 import { mkdtempSync, rmSync, writeFileSync } from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
-import { ModelRuntime } from "@earendil-works/pi-coding-agent";
+import { AuthStorage, ModelRegistry } from "@earendil-works/pi-coding-agent";
 
 export interface ModelDiscoveryAuth {
   apiKey?: string;
@@ -35,22 +35,24 @@ export async function resolveModelDiscoveryAuth(
       },
     }, null, 2), "utf8");
 
-    const modelRuntime = await ModelRuntime.create({ modelsPath });
-    const loadError = modelRuntime.getError();
+    const authStorage = AuthStorage.create();
+    const modelRegistry = ModelRegistry.create(authStorage, modelsPath);
+    const loadError = modelRegistry.getError();
     if (loadError) throw new Error(loadError);
-    const model = modelRuntime.getModel(providerName, discoveryModelId);
+    const model = modelRegistry.getAll().find((m) => m.provider === providerName && m.id === discoveryModelId);
     if (!model) throw new Error(`Unable to load provider "${providerName}"`);
 
-    const resolved = await modelRuntime.getAuth(model);
-    if (resolved) {
+    const resolved = await modelRegistry.getApiKeyAndHeaders(model);
+    if (resolved.ok) {
       return {
-        apiKey: resolved.auth.apiKey,
-        headers: stringRecord(resolved.auth.headers),
+        apiKey: resolved.apiKey,
+        headers: stringRecord(resolved.headers),
       };
     }
 
     return {
-      headers: stringRecord(modelRuntime.getCompatibilityRequestConfig(model).headers),
+      apiKey: undefined,
+      headers: {},
     };
   } finally {
     if (tempDir) rmSync(tempDir, { recursive: true, force: true });

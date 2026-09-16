@@ -11,7 +11,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { getAllowedFileRoots, isExistingFilePathAllowed } from "@/lib/file-access";
 import { hasJsonContentType, isApiRequestAllowed } from "@/lib/request-security";
-import { getProjectTrustStatus } from "@/lib/project-trust";
 import { isPluginSourceCheckable } from "@/lib/plugin-updates";
 import type {
   PluginDiagnostic,
@@ -204,10 +203,7 @@ function collectResources(paths: ResolvedPaths): {
 
 async function readPlugins(cwd: string): Promise<PluginsResponse> {
   const agentDir = getAgentDir();
-  const projectTrust = getProjectTrustStatus(cwd, agentDir);
-  const settingsManager = SettingsManager.create(cwd, agentDir, {
-    projectTrusted: projectTrust.trusted,
-  });
+  const settingsManager = SettingsManager.create(cwd, agentDir);
   const packageManager = new DefaultPackageManager({
     cwd,
     agentDir,
@@ -272,7 +268,7 @@ async function readPlugins(cwd: string): Promise<PluginsResponse> {
     packages,
     totals,
     diagnostics,
-    projectResourcesLoaded: projectTrust.trusted,
+    projectResourcesLoaded: true,
   };
 }
 
@@ -320,17 +316,8 @@ export async function POST(req: Request) {
     }
 
     const agentDir = getAgentDir();
-    const projectTrust = getProjectTrustStatus(body.cwd, agentDir);
-    const settingsManager = SettingsManager.create(body.cwd, agentDir, {
-      projectTrusted: projectTrust.trusted,
-    });
+    const settingsManager = SettingsManager.create(body.cwd, agentDir);
     const scope = readScope(body.scope);
-    if (scope === "project" && !projectTrust.trusted) {
-      return NextResponse.json(
-        { error: "Project resources must be trusted before modifying project plugins" },
-        { status: 403 },
-      );
-    }
     const packageManager = new DefaultPackageManager({
       cwd: body.cwd,
       agentDir,
@@ -346,12 +333,6 @@ export async function POST(req: Request) {
       if (!source) return NextResponse.json({ error: "source required" }, { status: 400 });
       await packageManager.removeAndPersist(source, { local });
     } else if (body.action === "update") {
-      if (!source && !projectTrust.trusted && packageManager.listConfiguredPackages().some((pkg) => pkg.scope === "project")) {
-        return NextResponse.json(
-          { error: "Project resources must be trusted before updating project plugins" },
-          { status: 403 },
-        );
-      }
       await packageManager.update(source);
     } else if (body.action === "disable") {
       if (!source) return NextResponse.json({ error: "source required" }, { status: 400 });

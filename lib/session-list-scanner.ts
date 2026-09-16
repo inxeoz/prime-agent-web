@@ -8,6 +8,7 @@ import type { Dirent } from "node:fs";
 import { join } from "node:path";
 import { createInterface } from "node:readline";
 import { getAgentDir } from "@earendil-works/pi-coding-agent";
+import "./prime-compat";
 import { writePrivateFileAtomicSync } from "./atomic-file";
 
 export interface ScannedSessionInfo {
@@ -177,19 +178,22 @@ export async function scanSessionFileInfo(
 }
 
 async function enumerateSessionFiles(sessionsDir: string): Promise<string[]> {
-	let dirs: Dirent[];
+	let entries: Dirent[];
 	try {
-		const entries = await readdir(sessionsDir, { withFileTypes: true });
-		dirs = entries.filter(
-			(entry) => entry.isDirectory() || entry.isSymbolicLink(),
-		);
+		entries = await readdir(sessionsDir, { withFileTypes: true });
 	} catch {
 		return [];
 	}
 
 	const files: string[] = [];
-	for (const dir of dirs) {
-		const dirPath = join(sessionsDir, dir.name);
+	for (const entry of entries) {
+		if (entry.isFile() && entry.name.endsWith(".jsonl")) {
+			// ponytail: prime-agent flat layout (sessions/*.jsonl) + pi nested
+			files.push(join(sessionsDir, entry.name));
+			continue;
+		}
+		if (!entry.isDirectory() && !entry.isSymbolicLink()) continue;
+		const dirPath = join(sessionsDir, entry.name);
 		try {
 			for (const f of await readdir(dirPath)) {
 				if (f.endsWith(".jsonl")) files.push(join(dirPath, f));

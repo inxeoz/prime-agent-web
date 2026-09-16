@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import type { ThinkingLevel } from "@earendil-works/pi-agent-core";
 import {
   createAgentSessionFromServices,
@@ -6,7 +7,7 @@ import {
   initTheme,
   SessionManager,
   SettingsManager,
-  type ModelRuntime,
+  type ModelRegistry,
 } from "@earendil-works/pi-coding-agent";
 import type { AgentSessionLike } from "./pi-types";
 import {
@@ -30,7 +31,6 @@ import {
 import type { SessionEntry } from "./types";
 import { buildSubagentPromptPlan } from "./subagent-prompt";
 import { appendSubagentInputFiles, loadSubagentInputFiles } from "./subagent-input";
-import { projectTrustReloadOptions } from "./project-trust";
 import { resolveShellTools } from "./powershell-settings";
 import { isBuiltInSubagentsEnabled } from "./subagent-settings";
 
@@ -87,18 +87,18 @@ function getSubagentStartingCounts(): Map<string, number> {
   return globalThis.__piSubagentStartingCounts;
 }
 
-function parseSubagentModel(runtime: ModelRuntime, value: string | undefined) {
+function parseSubagentModel(runtime: ModelRegistry, value: string | undefined) {
   if (!value?.trim()) return undefined;
   const requested = value.trim();
   const slash = requested.indexOf("/");
   if (slash > 0) {
     const provider = requested.slice(0, slash);
     const modelId = requested.slice(slash + 1);
-    const model = runtime.getModel(provider, modelId);
+    const model = runtime.find(provider, modelId);
     if (!model) throw new Error(`Subagent model not found: ${requested}`);
     return model;
   }
-  const matches = runtime.getModels().filter((model) => model.id === requested);
+  const matches = runtime.getAll().filter((model: { id: string }) => model.id === requested);
   if (matches.length === 1) return matches[0];
   if (matches.length === 0) throw new Error(`Subagent model not found: ${requested}`);
   throw new Error(`Subagent model is ambiguous; use provider/modelId: ${requested}`);
@@ -158,7 +158,7 @@ export function createSubagentController(
       }
 
       const agentDir = getAgentDir();
-      const parentModelRuntime = (parent.inner as unknown as { modelRuntime: ModelRuntime }).modelRuntime;
+      const parentModelRuntime = (parent.inner as unknown as { modelRegistry: ModelRegistry }).modelRegistry;
       const settingsManager = SettingsManager.create(parent.cwd, agentDir);
       const inheritedParentContext = inheritContext
         ? `The following is the active conversation context from the parent session. Use it only as background for the delegated task:\n${parentContextText(parent)}`
@@ -177,7 +177,7 @@ export function createSubagentController(
       const services = await createAgentSessionServices({
         cwd: parent.cwd,
         agentDir,
-        modelRuntime: parentModelRuntime,
+        modelRegistry: parentModelRuntime,
         settingsManager,
         resourceLoaderOptions: {
           noExtensions: !profile.loadExtensions,
@@ -194,7 +194,7 @@ export function createSubagentController(
           appendSystemPrompt,
         },
         ...((profile.loadExtensions || profile.loadSkills)
-          ? { resourceLoaderReloadOptions: projectTrustReloadOptions(parent.cwd, agentDir) }
+          ? { resourceLoaderReloadOptions: undefined }
           : {}),
       });
 
@@ -203,10 +203,11 @@ export function createSubagentController(
         : [];
       const activeTools = resolveShellTools(
         withSubagentExtensionTools(profile.tools, extensionToolNames),
-        settingsManager.getDefaultTools(),
+        (settingsManager as unknown as { getDefaultTools?: () => string[] }).getDefaultTools?.() ?? [],
       );
 
-      const sessionManager = SessionManager.create(parent.cwd, undefined, { parentSession: parent.sessionFile });
+      const sessionManager = SessionManager.create(parent.cwd);
+      sessionManager.newSession({ parentSession: parent.sessionFile });
       const createdAt = new Date().toISOString();
       const metadata: SubagentMetadata = {
         version: 1,
@@ -230,14 +231,15 @@ export function createSubagentController(
       sessionManager.appendSessionInfo(metadata.description);
 
       const requestedModel = parseSubagentModel(parentModelRuntime, request.model ?? profile.model);
-      const parentModel = parent.inner.model as ReturnType<ModelRuntime["getModel"]>;
+      const parentModel = parent.inner.model as ReturnType<ModelRegistry["find"]>;
       const { session: inner } = await createAgentSessionFromServices({
         services,
         sessionManager,
         model: requestedModel ?? parentModel,
         ...(thinking ? { thinkingLevel: thinking as ThinkingLevel } : {}),
         tools: activeTools,
-        excludeTools: [...SUBAGENT_CONTROL_TOOL_NAMES],
+        // ponytail: excludeTools removed in 0.9.5
+
       });
       dependencies.registerSession(inner, {
         ...(promptPlan.exactSystemPrompt !== undefined

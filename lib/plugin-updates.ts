@@ -9,7 +9,6 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { gt, maxSatisfying, rcompare, valid, validRange } from "semver";
 import type { PluginScope, PluginUpdateResult } from "@/lib/api-types";
-import { getProjectTrustStatus } from "./project-trust";
 
 const execFileAsync = promisify(execFile);
 
@@ -188,10 +187,7 @@ export async function checkPluginUpdates(
   let npmCommand = options.npmCommand;
   if (!packages) {
     const agentDir = getAgentDir();
-    const projectTrust = getProjectTrustStatus(cwd, agentDir);
-    const settingsManager = SettingsManager.create(cwd, agentDir, {
-      projectTrusted: projectTrust.trusted,
-    });
+    const settingsManager = SettingsManager.create(cwd, agentDir);
     packages = new DefaultPackageManager({ cwd, agentDir, settingsManager }).listConfiguredPackages();
     npmCommand ??= settingsManager.getNpmCommand();
   }

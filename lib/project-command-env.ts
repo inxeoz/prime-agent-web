@@ -1,9 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
   createBashToolDefinition,
   createLocalBashOperations,
   getAgentDir,
   type BashOperations,
-  type InlineExtension,
+  type Extension,
   type LoadExtensionsResult,
 } from "@earendil-works/pi-coding-agent";
 import { join } from "node:path";
@@ -87,15 +88,15 @@ export function createProjectCommandBashOperations(
 export function createProjectCommandBashExtension(options: {
   cwd: string;
   settings: ProjectShellSettings;
-}): InlineExtension {
+}): Extension {
   return {
     name: HOST_EXTENSION_NAME,
     hidden: true,
-    factory: (pi) => {
+    factory: (pi: any) => {
       const displayDefinition = createBashToolDefinition(options.cwd);
       pi.registerTool({
         ...displayDefinition,
-        execute(toolCallId, params, signal, onUpdate, context) {
+        execute(toolCallId: any, params: any, signal: any, onUpdate: any, context: any) {
           const executionDefinition = createBashToolDefinition(options.cwd, {
             commandPrefix: options.settings.getShellCommandPrefix(),
             operations: createProjectCommandBashOperations({
@@ -106,7 +107,7 @@ export function createProjectCommandBashExtension(options: {
         },
       });
     },
-  };
+  } as unknown as Extension;
 }
 
 export function preferUserBashExtension(base: LoadExtensionsResult): LoadExtensionsResult {

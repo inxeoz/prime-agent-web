@@ -19,6 +19,8 @@ const fs = require("fs");
 const { getHelpText, parseLaunchOptions } = require("./pi-web-options");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { wireChildProcessLifecycle } = require("./process-lifecycle");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const os = require("os");
 
 let launchOptions;
 try {
@@ -81,6 +83,13 @@ nextArgs.push("-H", hostname);
 
 // Always run next's JS entry with node directly — avoids .bin symlink issues
 // and path-with-spaces problems on Windows when shell: true is used.
+// ponytail: prime-compat – keep in sync with lib/prime-compat.ts
+if (!process.env.PI_CODING_AGENT_DIR) {
+  try {
+    const primeDir = process.env.PRIME_AGENT_CODING_AGENT_DIR || path.join(os.homedir(), ".prime/agent");
+    if (fs.existsSync(primeDir)) process.env.PI_CODING_AGENT_DIR = primeDir;
+  } catch {}
+}
 const child = spawn(process.execPath, [nextBin, ...nextArgs], {
   cwd: pkgDir,
   stdio: ["inherit", "pipe", "inherit"],

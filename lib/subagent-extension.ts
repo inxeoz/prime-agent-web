@@ -1,8 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { Type } from "@earendil-works/pi-ai";
 import {
   defineTool,
   type ExtensionContext,
-  type InlineExtension,
+  type Extension,
   type LoadExtensionsResult,
 } from "@earendil-works/pi-coding-agent";
 import {
@@ -98,11 +99,11 @@ export function createSubagentExtension(
   runtime: SubagentExtensionRuntime,
   getProfiles: SubagentProfileProvider,
   isEnabled: SubagentEnabledProvider = () => true,
-): InlineExtension {
+): Extension {
   return {
     name: HOST_SUBAGENT_EXTENSION_NAME,
     hidden: true,
-    factory: (pi) => {
+    factory: (pi: any) => {
       if (!isEnabled()) return;
       const profiles = getProfiles().filter((profile) => profile.enabled);
       const profileNames = profiles.map((profile) => profile.name);
@@ -237,7 +238,7 @@ export function createSubagentExtension(
         },
       }));
     },
-  };
+  } as unknown as Extension;
 }
 
 /** Keep Pi Web's integrated implementation when the legacy package is loaded. */

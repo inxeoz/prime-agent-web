@@ -55,7 +55,7 @@ export function buildSessionTitleAgentOptions(source: Agent): AgentOptions {
     },
     convertToLlm: source.convertToLlm,
     transformContext: source.transformContext,
-    streamFn: source.streamFunction,
+    streamFn: source.streamFn,
     getApiKey: source.getApiKey,
     onPayload: source.onPayload,
     onResponse: source.onResponse,
@@ -64,7 +64,6 @@ export function buildSessionTitleAgentOptions(source: Agent): AgentOptions {
     sessionId: source.sessionId,
     thinkingBudgets: source.thinkingBudgets,
     transport: source.transport,
-    maxRetryDelayMs: source.maxRetryDelayMs,
     toolExecution: source.toolExecution,
   };
 }

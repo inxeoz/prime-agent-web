@@ -1,3 +1,4 @@
+import "./prime-compat";
 import {
   SessionManager,
   getAgentDir,
