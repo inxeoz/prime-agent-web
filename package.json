@@ -16,7 +16,8 @@
   },
   "bin": {
     "prime-agent-web": "bin/pi-web.js",
-    "pi-web": "bin/pi-web.js"
+    "pi-web": "bin/pi-web.js",
+    "prime-web": "bin/pi-web.js"
   },
   "files": [
     "bin",
