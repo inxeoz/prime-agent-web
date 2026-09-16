@@ -1327,7 +1327,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
                   web <span style={{ color: "var(--text)" }}>v{process.env.NEXT_PUBLIC_APP_VERSION ?? "0.0.0"}</span>
                 </span>
                 <span style={{ fontSize: 11, color: "var(--text-muted)" }}>
-                  pi <span style={{ color: "var(--text)" }}>v{process.env.NEXT_PUBLIC_PI_VERSION ?? "0.0.0"}</span>
+                  prime <span style={{ color: "var(--text)" }}>v{process.env.NEXT_PUBLIC_PRIME_VERSION ?? process.env.NEXT_PUBLIC_PI_VERSION ?? "0.0.0"}</span>
                 </span>
               </div>
             </div>

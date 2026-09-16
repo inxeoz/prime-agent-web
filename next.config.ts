@@ -7,9 +7,11 @@ import { fileURLToPath } from "url";
 const configDir = dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(readFileSync(join(configDir, "package.json"), "utf8")) as { version: string };
 let piVersion = "unknown";
+let primeVersion = "unknown";
 try {
   const piPkgPath = join(configDir, "node_modules/@earendil-works/pi-coding-agent/package.json");
   piVersion = (JSON.parse(readFileSync(piPkgPath, "utf8")) as { version: string }).version;
+  primeVersion = piVersion;
 } catch { /* package not found, use default */ }
 
 const nextConfig: NextConfig = {
@@ -74,6 +76,7 @@ const nextConfig: NextConfig = {
   env: {
     NEXT_PUBLIC_APP_VERSION: version,
     NEXT_PUBLIC_PI_VERSION: piVersion,
+    NEXT_PUBLIC_PRIME_VERSION: primeVersion,
   },
 };
 
