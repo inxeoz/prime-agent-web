@@ -1097,7 +1097,7 @@ export function AppShell() {
 
   const activeFileTab = fileTabs.find((tab) => tab.id === activeFileTabId) ?? null;
   const activeCwdName = activeCwd ? getFileName(activeCwd) || activeCwd : null;
-  const windowTitle = activeCwdName ? `${activeCwdName} - Prime Agent Web` : "Prime Agent Web";
+  const windowTitle = activeCwdName ? `${activeCwdName} - Prime Web` : "Prime Web";
 
   useEffect(() => {
     const syncWindowTitle = () => {

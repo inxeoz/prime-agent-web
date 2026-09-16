@@ -13,9 +13,9 @@ const notoSansMono = Noto_Sans_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Prime Agent Web",
-  description: "Prime Agent Web interface for the prime coding agent",
-  applicationName: "Prime Agent Web",
+  title: "Prime Web",
+  description: "Prime Web interface for the prime coding agent",
+  applicationName: "Prime Web",
   manifest: "/manifest.webmanifest",
   icons: {
     icon: [
@@ -36,7 +36,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Prime Agent Web",
+    title: "Prime Web",
   },
   formatDetection: {
     telephone: false,
