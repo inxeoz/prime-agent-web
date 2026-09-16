@@ -2300,6 +2300,28 @@ export const ChatInput = forwardRef<ChatInputHandle, Props>(function ChatInput({
                 isAutoSelection={isAutoModelSelection}
               />
             )}
+            {/* Live status: Waiting | Processing | Done with spin if not idle */}
+            <div
+              title={isCompacting ? "Compacting" : isStreaming ? "Processing" : "Done"}
+              style={{
+                display: "flex", alignItems: "center", gap: 6,
+                marginLeft: 8, padding: "4px 8px",
+                background: isStreaming || isCompacting ? "rgba(var(--accent-rgb, 99,102,241),0.12)" : "var(--bg-hover)",
+                border: `1px solid ${isStreaming || isCompacting ? "var(--accent)" : "var(--border)"}`,
+                borderRadius: 999, color: isStreaming || isCompacting ? "var(--accent)" : "var(--text-muted)",
+                fontSize: 11, fontWeight: 600, whiteSpace: "nowrap",
+              }}
+            >
+              {(isStreaming || isCompacting) && (
+                <span style={{ width: 12, height: 12, display: "inline-flex" }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" style={{ animation: "spin 0.9s linear infinite" }}>
+                    <path d="M21 12a9 9 0 1 1-3.8-7.4" />
+                  </svg>
+                </span>
+              )}
+              <span>{isCompacting ? "Compacting" : isStreaming ? "Processing" : "Done"}</span>
+              {!isStreaming && !isCompacting && <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#10b981", display: "inline-block" }} />}
+            </div>
           </div>
 
           {/* spacer */}
