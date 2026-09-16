@@ -2046,6 +2046,75 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // ponytail: external pi TUI writes directly to .jsonl with no SSE; poll the open file while idle
+  // uses fs.watch SSE when available, falls back to interval
+  useEffect(() => {
+    if (!session?.id || agentRunning) return;
+    const sid = session.id;
+    let es: EventSource | null = null;
+    let fallback: ReturnType<typeof setInterval> | null = null;
+    let usingSse = false;
+
+    const fallbackPoll = () => {
+      if (usingSse) return;
+      fallback = setInterval(() => {
+        if (document.visibilityState !== "visible") return;
+        if (agentRunningRef.current) return;
+        void loadSession(sid);
+      }, 1500);
+    };
+
+    try {
+      es = new EventSource(`/api/sessions/${encodeURIComponent(sid)}/watch`);
+      es.onmessage = (e) => {
+        try {
+          const data = JSON.parse(e.data) as { type?: string };
+          if (data.type === "changed" && !agentRunningRef.current) void loadSession(sid);
+        } catch {
+          if (!agentRunningRef.current) void loadSession(sid);
+        }
+      };
+      es.onerror = () => {
+        // SSE failed (e.g. route not deployed yet) -> fall back to polling
+        try { es?.close(); } catch {}
+        es = null;
+        usingSse = false;
+        if (!fallback) fallbackPoll();
+      };
+      // if connected, disable fallback; if not connected within 3s, enable it
+      const t = setTimeout(() => {
+        if (es && es.readyState !== 1) {
+          usingSse = false;
+          if (!fallback) fallbackPoll();
+        } else {
+          usingSse = true;
+          if (fallback) { clearInterval(fallback); fallback = null; }
+        }
+      }, 3000);
+      // SSE healthy shortly -> cancel fallback poll
+      setTimeout(() => {
+        if (es && es.readyState === 1) {
+          usingSse = true;
+          if (fallback) { clearInterval(fallback); fallback = null; }
+        }
+        clearTimeout(t);
+      }, 1000);
+    } catch {
+      es = null;
+    }
+    if (!es) fallbackPoll();
+
+    const onVis = () => {
+      if (document.visibilityState === "visible" && !agentRunningRef.current) void loadSession(sid);
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      try { es?.close(); } catch {}
+      if (fallback) clearInterval(fallback);
+      document.removeEventListener("visibilitychange", onVis);
+    };
+  }, [session?.id, agentRunning, loadSession]);
+
   useEffect(() => {
     onSystemPromptChange?.(systemPrompt);
   }, [systemPrompt, onSystemPromptChange]);

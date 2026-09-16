@@ -31,13 +31,31 @@ export async function GET(
   try {
     const rpc = getRpcSession(id);
     const liveRpc = rpc?.isAlive() ? rpc : undefined;
-    const resolvedPath = liveRpc ? null : await resolveSessionPath(id);
+    let resolvedPath = liveRpc ? null : await resolveSessionPath(id);
     if (!liveRpc && !resolvedPath) {
       return NextResponse.json({ error: "Session not found" }, { status: 404 });
     }
 
-    const sm = liveRpc?.inner.sessionManager ?? SessionManager.open(resolvedPath!);
-    const filePath = liveRpc?.sessionFile || sm.getSessionFile() || resolvedPath || "";
+    // ponytail: external prime-agent can append to .jsonl while wrapper is alive but idle; SM is stale -> reload from file
+    let sm = liveRpc?.inner.sessionManager ?? SessionManager.open(resolvedPath!);
+    let filePath = liveRpc?.sessionFile || sm.getSessionFile() || resolvedPath || "";
+    if (liveRpc && !liveRpc.isRunning()) {
+      try {
+        const freshPath = filePath || await resolveSessionPath(id);
+        if (freshPath && existsSync(freshPath)) {
+          const fresh = SessionManager.open(freshPath);
+          const staleLeaf = sm.getLeafId();
+          const freshLeaf = fresh.getLeafId();
+          const staleCount = sm.getEntries().length;
+          const freshCount = fresh.getEntries().length;
+          if (freshLeaf !== staleLeaf || freshCount !== staleCount) {
+            sm = fresh;
+            filePath = freshPath;
+            resolvedPath = freshPath;
+          }
+        }
+      } catch { /* keep stale SM on error */ }
+    }
     const entries = sm.getEntries();
     const leafId = sm.getLeafId();
     const tree = projectTreeForResponse(sm.getTree());
