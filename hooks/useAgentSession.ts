@@ -2046,10 +2046,10 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ponytail: external pi TUI writes directly to .jsonl with no SSE; poll the open file while idle
+  // ponytail: external pi TUI writes directly to .jsonl with no SSE; keep watch even while streaming for daemon forward (A)
   // uses fs.watch SSE when available, falls back to interval
   useEffect(() => {
-    if (!session?.id || agentRunning) return;
+    if (!session?.id) return;
     const sid = session.id;
     let es: EventSource | null = null;
     let fallback: ReturnType<typeof setInterval> | null = null;
@@ -2059,7 +2059,6 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (usingSse) return;
       fallback = setInterval(() => {
         if (document.visibilityState !== "visible") return;
-        if (agentRunningRef.current) return;
         void loadSession(sid);
       }, 1500);
     };
@@ -2069,9 +2068,9 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       es.onmessage = (e) => {
         try {
           const data = JSON.parse(e.data) as { type?: string };
-          if (data.type === "changed" && !agentRunningRef.current) void loadSession(sid);
+          if (data.type === "changed") void loadSession(sid);
         } catch {
-          if (!agentRunningRef.current) void loadSession(sid);
+          void loadSession(sid);
         }
       };
       es.onerror = () => {
@@ -2105,7 +2104,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     if (!es) fallbackPoll();
 
     const onVis = () => {
-      if (document.visibilityState === "visible" && !agentRunningRef.current) void loadSession(sid);
+      if (document.visibilityState === "visible") void loadSession(sid);
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
