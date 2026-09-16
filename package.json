@@ -1,20 +1,21 @@
 {
-  "name": "@agegr/pi-web",
+  "name": "@inxeoz/prime-agent-web",
   "version": "0.9.1",
-  "description": "Web UI for the pi coding agent",
-  "homepage": "https://github.com/agegr/pi-web#readme",
+  "description": "Web UI for the prime coding agent",
+  "homepage": "https://github.com/inxeoz/prime-agent-web#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/agegr/pi-web.git"
+    "url": "git+https://github.com/inxeoz/prime-agent-web.git"
   },
   "bugs": {
-    "url": "https://github.com/agegr/pi-web/issues"
+    "url": "https://github.com/inxeoz/prime-agent-web/issues"
   },
   "license": "MIT",
   "engines": {
     "node": ">=22.19.0"
   },
   "bin": {
+    "prime-agent-web": "bin/pi-web.js",
     "pi-web": "bin/pi-web.js"
   },
   "files": [
