@@ -404,8 +404,9 @@ export function createSubagentController(
     await wrapper.inner.abort();
   }
 
+  async function resume(..._args: unknown[]): Promise<never> { throw new Error("resume not supported in prime web"); }
   return {
-    extensionRuntime: { start, get, steer, notifyParent },
+    extensionRuntime: { start, get, steer, notifyParent, resume } as unknown as import("./subagent-extension").SubagentExtensionRuntime,
     get,
     steer,
     abort,
