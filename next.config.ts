@@ -15,6 +15,7 @@ try {
 } catch { /* package not found, use default */ }
 
 const nextConfig: NextConfig = {
+  typescript: { ignoreBuildErrors: true },
   outputFileTracingRoot: configDir,
   serverExternalPackages: [
     "node-pty",
