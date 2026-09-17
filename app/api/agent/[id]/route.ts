@@ -1,31 +1,7 @@
 import { NextResponse } from "next/server";
-import { execFile as execFileCb } from "node:child_process";
-import { promisify } from "node:util";
 import { resolveSessionPath } from "@/lib/session-reader";
 import { startRpcSession, getRpcSession, setRpcSessionTools } from "@/lib/rpc-manager";
-
-const execFile = promisify(execFileCb);
-
-async function isDaemonSessionLive(id: string): Promise<boolean> {
-  try {
-    const { stdout } = await execFile("prime-agent", ["list", "--json"], { timeout: 3000 });
-    const data = JSON.parse(stdout) as { sessions?: Array<{ sessionId?: string; id?: string; activeSessionId?: string }> };
-    const sessions = data.sessions ?? [];
-    return sessions.some((s) => s.sessionId === id || s.id === id || s.activeSessionId === id);
-  } catch { return false; }
-}
-
-async function forwardToDaemon(id: string, body: Record<string, unknown>): Promise<unknown> {
-  if (body.type !== "prompt") return null;
-  const message = typeof body.message === "string" ? body.message : "";
-  if (!message.trim()) throw new Error("prompt message is empty");
-  const behavior = typeof body.streamingBehavior === "string" ? body.streamingBehavior : undefined;
-  const args = ["send", id, message];
-  if (behavior === "steer") args.splice(2, 0, "--steer");
-  else if (behavior === "followUp" || behavior === "follow_up") args.splice(2, 0, "--follow-up");
-  const { stdout } = await execFile("prime-agent", args, { timeout: 15000 });
-  try { return JSON.parse(stdout); } catch { return { output: stdout }; }
-}
+import { isDaemonSessionLive, forwardToDaemon } from "@/lib/daemon";
 
 // POST /api/agent/[id] - Send a command to an existing session
 export async function POST(
