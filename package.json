@@ -1,6 +1,6 @@
 {
   "name": "@inxeoz/prime-agent-web",
-  "version": "0.9.3",
+  "version": "0.9.5",
   "description": "Web UI for the prime coding agent",
   "homepage": "https://github.com/inxeoz/prime-agent-web#readme",
   "repository": {
@@ -15,9 +15,7 @@
     "node": ">=22.19.0"
   },
   "bin": {
-    "prime-agent-web": "bin/pi-web.js",
-    "pi-web": "bin/pi-web.js",
-    "prime-web": "bin/pi-web.js"
+    "prime-agent-web": "bin/pi-web.js"
   },
   "files": [
     "bin",

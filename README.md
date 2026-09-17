@@ -1,8 +1,8 @@
-# Prime Web
+# Prime Agent Web
 
 [中文文档](./README.zh-CN.md) | [日本語](./README.ja.md) | [Русский](./README.ru.md)
 
-Local browser UI for the [prime coding agent](https://github.com/earendil-works/pi). Prime Web uses the same local configuration and session files as pi, so you can browse and resume conversations, run agent turns, configure models and resources, and inspect project files from a browser.
+Local browser UI for the [prime agent](https://github.com/PrimeIntellect-ai/prime-agent). Fork of [pi-web](https://github.com/agegr/pi-web) wired to `prime-agent` via submodule at `./prime-agent`. Uses the same local configuration and session files as `prime-agent`/`pi` (`~/.prime/agent`), so you can browse and resume conversations, run agent turns, configure models and resources, and inspect project files from a browser.
 
 ![Prime Web displaying a pi session with structured Markdown, tool calls, and project navigation](https://raw.githubusercontent.com/agegr/pi-web/main/docs/screenshot2.png)
 
@@ -20,7 +20,7 @@ Local browser UI for the [prime coding agent](https://github.com/earendil-works/
 Prime Web requires Node.js 22.19.0 or newer. Check your version with `node --version`, then run:
 
 ```bash
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 The CLI opens a browser after the server is ready. If it does not, open [http://127.0.0.1:30141](http://127.0.0.1:30141). Prime Web listens only on `127.0.0.1` by default.
@@ -30,11 +30,11 @@ If no model provider is configured yet, open the **Models** panel to sign in or 
 To install the `pi-web` command globally:
 
 ```bash
-npm install -g @agegr/pi-web@latest
-pi-web
+npm install -g @inxeoz/prime-agent-web@latest
+prime-agent-web
 ```
 
-To update, stop the running process with `Ctrl+C` and run the same install command again. To uninstall, run `npm uninstall -g @agegr/pi-web`.
+To update, stop the running process with `Ctrl+C` and run the same install command again. To uninstall, run `npm uninstall -g @inxeoz/prime-agent-web`.
 
 ## Configuration
 
@@ -78,7 +78,7 @@ On macOS or Linux:
 HTTP_PROXY=http://127.0.0.1:7890 \
 HTTPS_PROXY=http://127.0.0.1:7890 \
 NO_PROXY=localhost,127.0.0.1 \
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 On Windows PowerShell:
@@ -87,12 +87,12 @@ On Windows PowerShell:
 $env:HTTP_PROXY = "http://127.0.0.1:7890"
 $env:HTTPS_PROXY = "http://127.0.0.1:7890"
 $env:NO_PROXY = "localhost,127.0.0.1"
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 ## Notes
 
-- **Agent data**: Prime Web reads prime data from `~/.prime/agent` by default, including session files under `sessions/<encoded-cwd>/<timestamp>_<uuid>.jsonl`. Set `PRIME_AGENT_CODING_AGENT_DIR` (fallback `PI_CODING_AGENT_DIR`) to use another pi agent directory.
+- **Agent data**: Prime Agent Web reads prime data from `~/.prime/agent` (same as `prime-agent`/`pi`) by default, including session files under `sessions/<encoded-cwd>/<timestamp>_<uuid>.jsonl`. Set `PRIME_AGENT_CODING_AGENT_DIR` (fallback `PI_CODING_AGENT_DIR`) to use another pi agent directory.
 - **Filesystem access**: Prime Web must be able to read the agent data directory and the working directories recorded by its sessions. Run Prime Web in the same filesystem environment as pi when sharing existing sessions.
 - **Shared configuration**: the Models panel uses pi's model, settings, and credential storage, so changes are visible to both interfaces.
 - **File access boundary**: the file browser is limited to working directories selected in Prime Web and project or session roots it already knows about; it is not a general filesystem browser.
@@ -148,7 +148,17 @@ still take precedence.
 
 ## Development
 
+With submodule (required — `prime-agent` is a git submodule at `./prime-agent`):
+
 ```bash
+git clone --recurse-submodules https://github.com/inxeoz/prime-agent-web.git
+# or if already cloned:
+git submodule update --init --depth 1
+
+# 1. Build prime-agent deps (first clone only, ~2 min, needs Node >=22.19.0)
+cd prime-agent && npm install && npm run build && cd ..
+
+# 2. Install & run Prime Agent Web
 npm install
 npm run dev
 ```
@@ -161,7 +171,7 @@ node_modules/.bin/tsc --noEmit
 npm run lint
 ```
 
-Do not run `next build` or `npm run build` during normal development. It writes to `.next/` and can interfere with the development server; leave builds for release work.
+Do not run `next build` or `npm run build` during normal development. It writes to `.next/` and can interfere with the development server; leave builds for release work. `prime-agent/packages/coding-agent` is patched locally to export `./dist/core/model-resolver.js` for `lib/model-scope.ts` (Next 16 webpack respects `exports`); keep the patch in `prime-agent/packages/coding-agent/package.json` when updating the submodule.
 
 Contributor guides: [Internationalization](./docs/i18n.md) and [Release process](./docs/release.md).
 
@@ -174,6 +184,7 @@ hooks/           Client state and interaction hooks
 lib/             Session, agent, model, file, Git, and security logic
 public/          Static assets and PWA files
 bin/             npm CLI entrypoint and launch option parsing
+prime-agent/     prime-agent submodule (packages/agent, ai, coding-agent, tui) — file:./prime-agent/...
 docs/            Focused user and contributor guides
 ```
 

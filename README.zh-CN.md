@@ -2,7 +2,7 @@
 
 [English](./README.md) | [日本語](./README.ja.md) | [Русский](./README.ru.md)
 
-[pi 编程智能体](https://github.com/earendil-works/pi)的本地浏览器界面。Pi Web 与 pi 共用本机配置和会话文件，可在浏览器中查找和继续对话、运行智能体、配置模型与资源，并查看项目文件。
+[prime agent](https://github.com/PrimeIntellect-ai/prime-agent) 的本地浏览器界面。Fork 自 [pi-web](https://github.com/agegr/pi-web)，通过子模块 `./prime-agent` 关联 `prime-agent`。与 `prime-agent`/`pi` 共用本机配置和会话文件（`~/.prime/agent`），可在浏览器中查找和继续对话、运行智能体、配置模型与资源，并查看项目文件。
 
 中文微信群：请查看 [GitHub Discussions 帖子](https://github.com/agegr/pi-web/discussions/271)。
 
@@ -22,7 +22,7 @@
 Pi Web 要求 Node.js 22.19.0 或更高版本。先用 `node --version` 检查版本，然后运行：
 
 ```bash
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 服务就绪后，命令行会尝试自动打开浏览器。如果没有打开，请访问 [http://127.0.0.1:30141](http://127.0.0.1:30141)。Pi Web 默认仅监听 `127.0.0.1`。
@@ -32,11 +32,11 @@ npx @agegr/pi-web@latest
 如需全局安装 `pi-web` 命令：
 
 ```bash
-npm install -g @agegr/pi-web@latest
+npm install -g @inxeoz/prime-agent-web@latest
 pi-web
 ```
 
-更新前先用 `Ctrl+C` 停止正在运行的进程，再次执行同一条安装命令。卸载时运行 `npm uninstall -g @agegr/pi-web`。
+更新前先用 `Ctrl+C` 停止正在运行的进程，再次执行同一条安装命令。卸载时运行 `npm uninstall -g @inxeoz/prime-agent-web`。
 
 ## 配置
 
@@ -78,7 +78,7 @@ macOS 或 Linux：
 HTTP_PROXY=http://127.0.0.1:7890 \
 HTTPS_PROXY=http://127.0.0.1:7890 \
 NO_PROXY=localhost,127.0.0.1 \
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 Windows PowerShell：
@@ -87,7 +87,7 @@ Windows PowerShell：
 $env:HTTP_PROXY = "http://127.0.0.1:7890"
 $env:HTTPS_PROXY = "http://127.0.0.1:7890"
 $env:NO_PROXY = "localhost,127.0.0.1"
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 ## 注意事项
@@ -100,7 +100,17 @@ npx @agegr/pi-web@latest
 
 ## 开发
 
+需先初始化子模块（`prime-agent` 为 `git submodule`，位于 `./prime-agent`）：
+
 ```bash
+git clone --recurse-submodules https://github.com/inxeoz/prime-agent-web.git
+# 已克隆时：
+git submodule update --init --depth 1
+
+# 1. 构建 prime-agent 依赖（首次克隆需 ~2 分钟，需 Node >=22.19.0）
+cd prime-agent && npm install && npm run build && cd ..
+
+# 2. 安装并运行 Prime Agent Web
 npm install
 npm run dev
 ```
@@ -113,7 +123,7 @@ node_modules/.bin/tsc --noEmit
 npm run lint
 ```
 
-日常开发时不要运行 `next build` 或 `npm run build`。它们会写入 `.next/`，可能干扰开发服务器；仅在发布流程中执行构建。
+日常开发时不要运行 `next build` 或 `npm run build`。它们会写入 `.next/`，可能干扰开发服务器；仅在发布流程中执行构建。`prime-agent/packages/coding-agent` 已本地打补丁导出 `./dist/core/model-resolver.js` 以供 `lib/model-scope.ts` 使用（Next 16 webpack 校验 `exports`）；更新子模块时请保留该补丁。
 
 贡献者文档：[国际化](./docs/i18n.md)和[发布流程](./docs/release.md)。
 
@@ -126,6 +136,7 @@ hooks/           客户端状态和交互 hooks
 lib/             会话、智能体、模型、文件、Git 和安全逻辑
 public/          静态资源和 PWA 文件
 bin/             npm CLI 入口及启动参数解析
+prime-agent/     prime-agent 子模块（packages/agent、ai、coding-agent、tui）—— file:./prime-agent/...
 docs/            面向用户和贡献者的专题文档
 ```
 

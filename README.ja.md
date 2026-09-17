@@ -2,7 +2,7 @@
 
 [English](./README.md) | [简体中文](./README.zh-CN.md) | [Русский](./README.ru.md)
 
-[pi コーディングエージェント](https://github.com/earendil-works/pi) のローカルブラウザー UI です。Pi Web は pi と同じローカル設定とセッションファイルを使用し、ブラウザーから会話の検索と再開、エージェントの実行、モデルやリソースの設定、プロジェクトファイルの確認を行えます。
+[prime agent](https://github.com/PrimeIntellect-ai/prime-agent) のローカルブラウザー UI です。 [pi-web](https://github.com/agegr/pi-web) のフォークで、`./prime-agent` のサブモジュールとして `prime-agent` に紐付けられています。`prime-agent`/`pi` と同じローカル設定とセッションファイル（`~/.prime/agent`）を使用し、ブラウザーから会話の検索・再開、エージェント実行、モデル/リソース設定、プロジェクトファイル確認を行えます。
 
 ![構造化された Markdown、ツール呼び出し、プロジェクトナビゲーションとともに pi セッションを表示する Pi Web](https://raw.githubusercontent.com/agegr/pi-web/main/docs/screenshot2.png)
 
@@ -20,7 +20,7 @@
 Pi Web には Node.js 22.19.0 以降が必要です。`node --version` でバージョンを確認してから、次を実行します：
 
 ```bash
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 サーバーの準備が整うと、CLI はブラウザーを自動的に開こうとします。開かない場合は [http://127.0.0.1:30141](http://127.0.0.1:30141) にアクセスしてください。Pi Web はデフォルトで `127.0.0.1` のみをリッスンします。
@@ -30,11 +30,11 @@ npx @agegr/pi-web@latest
 `pi-web` コマンドをグローバルにインストールする場合：
 
 ```bash
-npm install -g @agegr/pi-web@latest
+npm install -g @inxeoz/prime-agent-web@latest
 pi-web
 ```
 
-更新時は、実行中のプロセスを `Ctrl+C` で停止してから同じインストールコマンドを再実行します。アンインストールするには `npm uninstall -g @agegr/pi-web` を実行します。
+更新時は、実行中のプロセスを `Ctrl+C` で停止してから同じインストールコマンドを再実行します。アンインストールするには `npm uninstall -g @inxeoz/prime-agent-web` を実行します。
 
 ## 設定
 
@@ -76,7 +76,7 @@ macOS または Linux：
 HTTP_PROXY=http://127.0.0.1:7890 \
 HTTPS_PROXY=http://127.0.0.1:7890 \
 NO_PROXY=localhost,127.0.0.1 \
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 Windows PowerShell：
@@ -85,7 +85,7 @@ Windows PowerShell：
 $env:HTTP_PROXY = "http://127.0.0.1:7890"
 $env:HTTPS_PROXY = "http://127.0.0.1:7890"
 $env:NO_PROXY = "localhost,127.0.0.1"
-npx @agegr/pi-web@latest
+npx @inxeoz/prime-agent-web@latest
 ```
 
 ## 注意事項
@@ -98,7 +98,17 @@ npx @agegr/pi-web@latest
 
 ## 開発
 
+サブモジュールが必要です（`prime-agent` は `./prime-agent` の git submodule）：
+
 ```bash
+git clone --recurse-submodules https://github.com/inxeoz/prime-agent-web.git
+# 既に clone 済みの場合:
+git submodule update --init --depth 1
+
+# 1. prime-agent 依存のビルド（初回のみ ~2分、Node >=22.19.0 が必要）
+cd prime-agent && npm install && npm run build && cd ..
+
+# 2. Prime Agent Web のインストールと起動
 npm install
 npm run dev
 ```
@@ -111,7 +121,7 @@ node_modules/.bin/tsc --noEmit
 npm run lint
 ```
 
-通常の開発中は `next build` または `npm run build` を実行しないでください。`.next/` に書き込まれ、開発サーバーに影響する可能性があります。ビルドはリリース作業時にのみ実行してください。
+通常の開発中は `next build` または `npm run build` を実行しないでください。`.next/` に書き込まれ、開発サーバーに影響する可能性があります。ビルドはリリース作業時にのみ実行してください。`prime-agent/packages/coding-agent` は `lib/model-scope.ts` 用に `./dist/core/model-resolver.js` を export するパッチを当てています（Next 16 webpack は `exports` を検証します）；サブモジュール更新時はパッチを維持してください。
 
 コントリビューター向けガイド：[Internationalization](./docs/i18n.md) と [Release process](./docs/release.md)。
 
@@ -124,6 +134,7 @@ hooks/           クライアントの状態と操作に関する hooks
 lib/             セッション、エージェント、モデル、ファイル、Git、セキュリティのロジック
 public/          静的アセットと PWA ファイル
 bin/             npm CLI エントリポイントと起動オプションの解析
+prime-agent/     prime-agent サブモジュール（packages/agent, ai, coding-agent, tui）— file:./prime-agent/...
 docs/            ユーザーおよびコントリビューター向けの個別ガイド
 ```
 
