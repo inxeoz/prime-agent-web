@@ -38,12 +38,11 @@
     "test:terminal": "node e2e/terminal.mjs",
     "test:e2e": "node e2e/run.mjs",
     "test": "node --experimental-strip-types --test \"app/**/*.test.mjs\" \"components/**/*.test.mjs\" \"hooks/**/*.test.mjs\" \"lib/**/*.test.mjs\" \"public/**/*.test.mjs\"",
-    "release": "node scripts/prime-agent-toggle.js --publish && npm install && npm version patch --no-git-tag-version && npm run build && npm publish --access public",
-    "dev:link": "node scripts/prime-agent-toggle.js --dev && npm install",
-    "dev:restore": "node scripts/prime-agent-toggle.js --restore && git submodule update --init --depth 1 && npm install",
+    "release": "npm version patch --no-git-tag-version && npm run build && npm publish --access public",
+    "dev:restore": "git submodule update --init --depth 1 && npm install",
     "prime-agent:build": "git submodule update --init --depth 1 && cd prime-agent && npm install && npm run build && cd ..",
     "release:dev": "npm version patch --no-git-tag-version && npm run build && npm publish --access public",
-    "release:restore": "node scripts/prime-agent-toggle.js --restore && npm install"
+    "release:restore": "git submodule update --init --depth 1 && npm install"
   },
   "dependencies": {
     "@earendil-works/pi-agent-core": "file:./prime-agent/packages/agent",
