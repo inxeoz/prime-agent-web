@@ -221,7 +221,7 @@ export default function (pi: ExtensionAPI) {
     description: "Kill prime-web (force)",
     handler: async (_args, ctx) => {
       try {
-        execSync(`lsof -ti :${WEB_PORT} | xargs -r kill -9`, { stdio: "ignore" });
+        execSync(`lsof -ti :${WEB_PORT} -sTCP:LISTEN | xargs -r kill -9`, { stdio: "ignore" });
         try {
           execSync(`pkill -f "next start.*${WEB_PORT}"`, { stdio: "ignore" });
         } catch {}
@@ -236,7 +236,7 @@ export default function (pi: ExtensionAPI) {
     description: "Stop prime-web",
     handler: async (_args, ctx) => {
       try {
-        execSync(`lsof -ti :${WEB_PORT} | xargs -r kill`, { stdio: "ignore" });
+        execSync(`lsof -ti :${WEB_PORT} -sTCP:LISTEN | xargs -r kill`, { stdio: "ignore" });
         ctx.ui.notify("prime-web stopped", "info");
       } catch {
         ctx.ui.notify("prime-web not running", "info");
