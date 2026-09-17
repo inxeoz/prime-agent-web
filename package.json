@@ -15,7 +15,6 @@
     "node": ">=22.19.0"
   },
   "bin": {
-    "prime-web-local": "bin/pi-web.js",
     "prime-agent-web": "bin/pi-web.js"
   },
   "files": [
