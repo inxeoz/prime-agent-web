@@ -24,6 +24,16 @@ function hasBuild(): boolean {
   return existsSync(join(WEB_DIR, ".next", "BUILD_ID"));
 }
 
+function resolvePrimeWebBin(): string | null {
+  for (const bin of ["prime-web-local", "prime-agent-web"]) {
+    try {
+      execSync(`which ${bin}`, { stdio: "ignore" });
+      return bin;
+    } catch {}
+  }
+  return null;
+}
+
 export default function (pi: ExtensionAPI) {
   pi.registerCommand("start-prime-web", {
     description: "Start prime-web (Next.js) for TUI<->Web live sync (A+B). Usage: /start-prime-web [--build] [--port 30141]",
@@ -56,7 +66,9 @@ export default function (pi: ExtensionAPI) {
 
         // spawn detached so TUI stays responsive; log to /tmp
         const log = "/tmp/prime-web.log";
-        const child = spawn("bash", ["-c", `nohup npm run start > ${log} 2>&1 & echo $!`], {
+        const bin = resolvePrimeWebBin();
+        const startCmd = bin ? `${bin} --port ${port} --no-open` : `npm run start`;
+        const child = spawn("bash", ["-c", `nohup ${startCmd} > ${log} 2>&1 & echo $!`], {
           cwd: WEB_DIR,
           stdio: "ignore",
           detached: true,
