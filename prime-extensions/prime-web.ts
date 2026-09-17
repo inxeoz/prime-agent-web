@@ -164,7 +164,11 @@ export default function (pi: ExtensionAPI) {
       const url = `http://127.0.0.1:${port}`;
 
       if (isWebRunning(port)) {
-        ctx.ui.notify(`prime-web already running at ${url}`, "info");
+        let pid = "";
+        try {
+          pid = execSync(`lsof -ti :${port}`, { encoding: "utf-8" }).trim().split(/\s+/)[0] ?? "";
+        } catch {}
+        ctx.ui.notify(`prime-web already running at ${url}${pid ? ` (pid ${pid})` : ""}`, "info");
         return;
       }
 
@@ -192,7 +196,11 @@ export default function (pi: ExtensionAPI) {
         for (let i = 0; i < 15; i++) {
           await new Promise((r) => setTimeout(r, 800));
           if (isWebRunning(port)) {
-            ctx.ui.notify(`prime-web ready at ${url} (log ${log})`, "info");
+            let pid = "";
+            try {
+              pid = execSync(`lsof -ti :${port}`, { encoding: "utf-8" }).trim().split(/\s+/)[0] ?? "";
+            } catch {}
+            ctx.ui.notify(`prime-web ready at ${url} (pid ${pid || "?"} log ${log})`, "info");
             ctx.ui.setStatus("prime-web", `● ${url}`);
             setTimeout(() => ctx.ui.setStatus("prime-web", undefined), 10000);
             return;
