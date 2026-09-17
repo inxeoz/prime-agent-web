@@ -1,6 +1,6 @@
 {
   "name": "@inxeoz/prime-agent-web",
-  "version": "0.9.1",
+  "version": "0.9.3",
   "description": "Web UI for the prime coding agent",
   "homepage": "https://github.com/inxeoz/prime-agent-web#readme",
   "repository": {
@@ -43,10 +43,10 @@
     "release": "npm version patch --no-git-tag-version && npm run build && npm publish --access public"
   },
   "dependencies": {
-    "@earendil-works/pi-agent-core": "file:../2026-08-13-primeagent/packages/agent",
-    "@earendil-works/pi-ai": "file:../2026-08-13-primeagent/packages/ai",
-    "@earendil-works/pi-coding-agent": "file:../2026-08-13-primeagent/packages/coding-agent",
-    "@earendil-works/pi-tui": "file:../2026-08-13-primeagent/packages/tui",
+    "@earendil-works/pi-agent-core": "file:./prime-agent/packages/agent",
+    "@earendil-works/pi-ai": "file:./prime-agent/packages/ai",
+    "@earendil-works/pi-coding-agent": "file:./prime-agent/packages/coding-agent",
+    "@earendil-works/pi-tui": "file:./prime-agent/packages/tui",
     "@xterm/addon-fit": "0.11.0",
     "@xterm/xterm": "6.0.0",
     "ansi_up": "^6.0.6",
