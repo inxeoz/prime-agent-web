@@ -26,6 +26,10 @@ try {
 const nextConfig: NextConfig = {
   typescript: { ignoreBuildErrors: true },
   outputFileTracingRoot: configDir,
+  experimental: {
+    proxyClientMaxBodySize: "128mb",
+  },
+  images: { unoptimized: true },
   serverExternalPackages: [
     "node-pty",
     "undici",
