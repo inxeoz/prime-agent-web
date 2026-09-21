@@ -1,8 +1,17 @@
-import "./lib/prime-compat";
 import type { NextConfig } from "next";
-import { readFileSync } from "fs";
+import { existsSync, readFileSync } from "fs";
+import { homedir } from "os";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+
+// ponytail: inline prime-compat so published package needs no lib/ at config-load time
+// (keeps lib/prime-compat.ts as canonical source for app/runtime imports)
+if (!process.env.PI_CODING_AGENT_DIR) {
+  try {
+    const primeDir = process.env.PRIME_AGENT_CODING_AGENT_DIR || join(homedir(), ".prime/agent");
+    if (existsSync(primeDir)) process.env.PI_CODING_AGENT_DIR = primeDir;
+  } catch {}
+}
 
 const configDir = dirname(fileURLToPath(import.meta.url));
 const { version } = JSON.parse(readFileSync(join(configDir, "package.json"), "utf8")) as { version: string };

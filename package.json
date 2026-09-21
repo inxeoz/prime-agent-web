@@ -1,6 +1,6 @@
 {
   "name": "@inxeoz/prime-agent-web",
-  "version": "0.9.8",
+  "version": "0.9.10",
   "description": "Web UI for the prime coding agent",
   "homepage": "https://github.com/inxeoz/prime-agent-web#readme",
   "repository": {
@@ -24,6 +24,7 @@
     "!.next/dev",
     "!.next/**/*.js.map",
     "public",
+    "lib/prime-compat.ts",
     "next.config.ts",
     "package.json"
   ],
