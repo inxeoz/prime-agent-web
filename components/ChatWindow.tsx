@@ -282,6 +282,7 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
     notices, extensionDialog, extensionCustomUi, extensionStatuses, extensionWidgets, respondToExtensionUi, sendExtensionCustomInput, setNoticePaused,
     isAutoModelSelection,
     agentPhase,
+    lastSyncTime,
     isNew,
     showScrollToBottom,
     sessionIdRef, scrollContainerRef,
@@ -877,6 +878,8 @@ export function ChatWindow({ session, searchTarget, onSearchTargetHandled, initi
       modelSwitching={modelSwitching}
       onCompact={session || isNew ? handleCompact : undefined}
       onAbortCompaction={handleAbortCompaction}
+      agentPhase={agentPhase}
+      lastSyncTime={lastSyncTime}
       isCompacting={isCompacting}
       compactError={compactError}
       compactResult={compactResult}

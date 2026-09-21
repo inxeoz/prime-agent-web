@@ -318,6 +318,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   const [compactError, setCompactError] = useState<string | null>(null);
   const [compactResult, setCompactResult] = useState<CompactResultInfo | null>(null);
   const [agentPhase, setAgentPhase] = useState<AgentPhase>(null);
+  const [lastSyncTime, setLastSyncTime] = useState<number>(Date.now());
   const [promptAnchorActive, setPromptAnchorActive] = useState(false);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [slashCommands, setSlashCommands] = useState<SlashCommandInfo[]>([]);
@@ -475,6 +476,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
       if (showLoading) setLoading(true);
       const params = new URLSearchParams({ deferThinking: "1", deferMedia: "1" });
       const res = await fetch(`/api/sessions/${encodeURIComponent(sid)}?${params}`);
+      setLastSyncTime(Date.now());
       if (res.status === 404) {
         if (showLoading) {
           setData(null);
@@ -919,6 +921,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
 
       try {
         const res = await fetch(`/api/agent/${encodeURIComponent(sid)}`);
+      setLastSyncTime(Date.now());
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json() as { running?: boolean; state?: AgentStateResponse };
         if (
@@ -1112,6 +1115,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
   }, [agentRunning]);
 
   const handleAgentEvent = useCallback((event: AgentEvent) => {
+    setLastSyncTime(Date.now());
     switch (event.type) {
       case "connected": {
         dispatch({ type: "end" });
@@ -2245,6 +2249,7 @@ export function useAgentSession(opts: UseAgentSessionOptions) {
     notices: noticeState.visible, extensionDialog, extensionCustomUi, extensionStatuses, extensionWidgets, respondToExtensionUi, sendExtensionCustomInput,
     isAutoModelSelection: isNew && newSessionModel === null,
     agentPhase,
+    lastSyncTime,
     isNew,
     promptAnchorActive,
     showScrollToBottom,
