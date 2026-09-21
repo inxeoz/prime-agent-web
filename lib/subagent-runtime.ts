@@ -129,6 +129,20 @@ function reserveSubagentSlot(parentSessionId: string): () => void {
   };
 }
 
+
+/** pi's agent loop records provider failures as an assistant message with `stopReason: "error"` and resolves `prompt()` normally; surface that as a failed run. */
+function lastAssistantError(sessionManager: { getEntries?: () => unknown }): string | undefined {
+  const entries = sessionManager.getEntries?.();
+  if (!Array.isArray(entries)) return undefined;
+  for (let i = entries.length - 1; i >= 0; i -= 1) {
+    const entry = entries[i] as { type?: unknown; message?: { role?: unknown; stopReason?: unknown; errorMessage?: unknown } };
+    if (entry?.type !== "message" || entry.message?.role !== "assistant") continue;
+    if (entry.message.stopReason !== "error") return undefined;
+    return typeof entry.message.errorMessage === "string" && entry.message.errorMessage ? entry.message.errorMessage : "Provider returned an error";
+  }
+  return undefined;
+}
+
 export function createSubagentController(
   dependencies: SubagentRuntimeDependencies,
 ): SubagentController {
@@ -309,11 +323,13 @@ export function createSubagentController(
           });
           const text = inner.getLastAssistantText()?.trim();
           const aborted = stored.abortRequested && !maxTurnsReached;
+          const providerError = aborted ? undefined : lastAssistantError(sessionManager);
           result = {
             ...initialRun,
-            status: aborted ? "aborted" : "completed",
+            status: aborted ? "aborted" : providerError ? "failed" : "completed",
             completedAt: new Date().toISOString(),
             ...(text ? { result: text } : {}),
+            ...(providerError ? { error: providerError } : {}),
           };
         } catch (error) {
           const text = inner.getLastAssistantText()?.trim();
