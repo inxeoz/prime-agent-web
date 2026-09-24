@@ -4,6 +4,8 @@
 
 [prime agent](https://github.com/PrimeIntellect-ai/prime-agent) 的本地浏览器界面。Fork 自 [pi-web](https://github.com/agegr/pi-web)，通过子模块 `./prime-agent` 关联 `prime-agent`。与 `prime-agent`/`pi` 共用本机配置和会话文件（`~/.prime/agent`），可在浏览器中查找和继续对话、运行智能体、配置模型与资源，并查看项目文件。
 
+**[在线体验演示 →](https://agegr.github.io/pi-web/)**：真实的 Pi Web 界面直接在浏览器里运行，带有示例会话、文件和模型。无需安装；回复都是预设内容，不会调用任何模型。
+
 中文微信群：请查看 [GitHub Discussions 帖子](https://github.com/agegr/pi-web/discussions/271)。
 
 ![Pi Web 展示包含结构化 Markdown、工具调用和项目导航的 pi 会话](https://raw.githubusercontent.com/agegr/pi-web/main/docs/screenshot2.png)
@@ -138,6 +140,7 @@ public/          静态资源和 PWA 文件
 bin/             npm CLI 入口及启动参数解析
 prime-agent/     prime-agent 子模块（packages/agent、ai、coding-agent、tui）—— file:./prime-agent/...
 docs/            面向用户和贡献者的专题文档
+demo/            发布到 GitHub Pages 的静态演示站（见 demo/README.md）
 ```
 
 架构说明和详细文件地图见 [AGENTS.md](./AGENTS.md)。

@@ -4,6 +4,8 @@
 
 [prime agent](https://github.com/PrimeIntellect-ai/prime-agent) のローカルブラウザー UI です。 [pi-web](https://github.com/agegr/pi-web) のフォークで、`./prime-agent` のサブモジュールとして `prime-agent` に紐付けられています。`prime-agent`/`pi` と同じローカル設定とセッションファイル（`~/.prime/agent`）を使用し、ブラウザーから会話の検索・再開、エージェント実行、モデル/リソース設定、プロジェクトファイル確認を行えます。
 
+**[インタラクティブデモを試す →](https://agegr.github.io/pi-web/)**：実際の Pi Web UI がブラウザー内だけで動作し、サンプルのセッション、ファイル、モデルを確認できます。インストールは不要です。返信はあらかじめ用意された内容で、モデルは呼び出しません。
+
 ![構造化された Markdown、ツール呼び出し、プロジェクトナビゲーションとともに pi セッションを表示する Pi Web](https://raw.githubusercontent.com/agegr/pi-web/main/docs/screenshot2.png)
 
 ## 機能
@@ -136,6 +138,7 @@ public/          静的アセットと PWA ファイル
 bin/             npm CLI エントリポイントと起動オプションの解析
 prime-agent/     prime-agent サブモジュール（packages/agent, ai, coding-agent, tui）— file:./prime-agent/...
 docs/            ユーザーおよびコントリビューター向けの個別ガイド
+demo/            GitHub Pages で公開する静的デモ（demo/README.md を参照）
 ```
 
 アーキテクチャの説明と詳細なファイルマップについては [AGENTS.md](./AGENTS.md) を参照してください。

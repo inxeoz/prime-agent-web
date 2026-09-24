@@ -1,3 +1,4 @@
+import "./prime-compat";
 import { execFile } from "child_process";
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
@@ -9,6 +10,7 @@ import {
 } from "@earendil-works/pi-coding-agent";
 import { gt, maxSatisfying, rcompare, valid, validRange } from "semver";
 import type { PluginScope, PluginUpdateResult } from "@/lib/api-types";
+import { nodeCliInvocation } from "./node-cli";
 
 const execFileAsync = promisify(execFile);
 
@@ -96,7 +98,10 @@ async function runCommand(
   args: string[],
   options: { cwd: string; env?: NodeJS.ProcessEnv },
 ): Promise<string> {
-  const { stdout } = await execFileAsync(command, args, {
+  // A bare `npm` resolves to `npm.cmd` on Windows, which `execFile` cannot
+  // spawn (CVE-2024-27980); run the bundled `npm-cli.js` through `node`.
+  const invocation = command === "npm" ? nodeCliInvocation("npm", args) : { command, args };
+  const { stdout } = await execFileAsync(invocation.command, invocation.args, {
     cwd: options.cwd,
     env: options.env ? { ...process.env, ...options.env } : process.env,
     encoding: "utf8",

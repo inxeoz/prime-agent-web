@@ -8,7 +8,7 @@ export async function POST(
   { params }: { params: Promise<{ provider: string }> }
 ) {
   const { provider } = await params;
-  const authStorage = AuthStorage.create();
+const authStorage = AuthStorage.create();
   const oauthProviders = authStorage.getOAuthProviders();
   if (!oauthProviders.some((p) => p.id === provider)) {
     return Response.json({ error: `Unknown provider: ${provider}` }, { status: 400 });

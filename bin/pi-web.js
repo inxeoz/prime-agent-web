@@ -18,6 +18,8 @@ const fs = require("fs");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { getHelpText, parseLaunchOptions } = require("./pi-web-options");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
+const { getNextNodeArgs } = require("./pi-web-node-args");
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const { wireChildProcessLifecycle } = require("./process-lifecycle");
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const os = require("os");
@@ -90,7 +92,7 @@ if (!process.env.PI_CODING_AGENT_DIR) {
     if (fs.existsSync(primeDir)) process.env.PI_CODING_AGENT_DIR = primeDir;
   } catch {}
 }
-const child = spawn(process.execPath, [nextBin, ...nextArgs], {
+const child = spawn(process.execPath, getNextNodeArgs(nextBin, nextArgs), {
   cwd: pkgDir,
   stdio: ["inherit", "pipe", "inherit"],
   env: { ...process.env, PI_WEB_HOSTNAME: hostname },

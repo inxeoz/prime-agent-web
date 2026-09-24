@@ -13,7 +13,16 @@ import { join } from "path";
  * Idempotent, safe to call from multiple entry points (next.config, rpc-manager, etc)
  */
 export function ensurePrimeEnv(): void {
-  if (process.env.PI_CODING_AGENT_DIR) return;
+  if (process.env.PI_CODING_AGENT_DIR) {
+    // The vendored prime-agent SDK resolves its agent dir from
+    // PRIME_AGENT_CODING_AGENT_DIR (its piConfig name is "prime-agent"), so
+    // mirror the app's canonical override into that spelling or the SDK falls
+    // back to ~/.prime/agent and ignores PI_CODING_AGENT_DIR entirely.
+    if (!process.env.PRIME_AGENT_CODING_AGENT_DIR) {
+      process.env.PRIME_AGENT_CODING_AGENT_DIR = process.env.PI_CODING_AGENT_DIR;
+    }
+    return;
+  }
   try {
     const primeDir = process.env.PRIME_AGENT_CODING_AGENT_DIR || join(homedir(), ".prime/agent");
     if (existsSync(primeDir)) process.env.PI_CODING_AGENT_DIR = primeDir;

@@ -14,7 +14,7 @@ export async function POST(req: Request, { params }: Params) {
     if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
       return NextResponse.json({ error: "apiKey is required" }, { status: 400 });
     }
-    const authStorage = AuthStorage.create();
+const authStorage = AuthStorage.create();
     authStorage.set(provider, { type: "api_key", key: apiKey.trim() });
     invalidateModelsCache();
     return NextResponse.json({ success: true });

@@ -186,6 +186,7 @@ public/          Static assets and PWA files
 bin/             npm CLI entrypoint and launch option parsing
 prime-agent/     prime-agent submodule (packages/agent, ai, coding-agent, tui) — file:./prime-agent/...
 docs/            Focused user and contributor guides
+demo/            Static browser demo published to GitHub Pages (see demo/README.md)
 ```
 
 See [AGENTS.md](./AGENTS.md) for the architecture notes and detailed file map.
